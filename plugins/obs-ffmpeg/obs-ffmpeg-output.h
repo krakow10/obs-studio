@@ -5,6 +5,8 @@
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
+#include "obs-ffmpeg-srt.h"
+#include "obs-ffmpeg-rist.h"
 
 struct ffmpeg_cfg {
 	const char *url;
@@ -31,6 +33,7 @@ struct ffmpeg_cfg {
 	int scale_height;
 	int width;
 	int height;
+	int frame_size; //audio frame size
 };
 
 struct ffmpeg_audio_info {
@@ -73,5 +76,32 @@ struct ffmpeg_data {
 	char *last_error;
 };
 
+struct ffmpeg_output {
+	obs_output_t *output;
+	volatile bool active;
+	struct ffmpeg_data ff_data;
+
+	bool connecting;
+	pthread_t start_thread;
+
+	uint64_t total_bytes;
+
+	uint64_t audio_start_ts;
+	uint64_t video_start_ts;
+	uint64_t stop_ts;
+	volatile bool stopping;
+
+	bool write_thread_active;
+	pthread_mutex_t write_mutex;
+	pthread_t write_thread;
+	os_sem_t *write_sem;
+	os_event_t *stop_event;
+
+	DARRAY(AVPacket) packets;
+	/* used for srt & rist */
+	URLContext *h;
+	AVIOContext *s;
+	bool got_headers;
+};
 bool ffmpeg_data_init(struct ffmpeg_data *data, struct ffmpeg_cfg *config);
 void ffmpeg_data_free(struct ffmpeg_data *data);

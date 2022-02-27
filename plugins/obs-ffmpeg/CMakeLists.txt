@@ -21,8 +21,22 @@ configure_file(
 	"${CMAKE_CURRENT_BINARY_DIR}/obs-ffmpeg-config.h")
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-set(obs-ffmpeg_config_HEADERS
-	"${CMAKE_CURRENT_BINARY_DIR}/obs-ffmpeg-config.h")
+target_sources(
+  obs-ffmpeg
+  PRIVATE obs-ffmpeg.c
+          obs-ffmpeg-video-encoders.c
+          obs-ffmpeg-audio-encoders.c
+          obs-ffmpeg-av1.c
+          obs-ffmpeg-nvenc.c
+          obs-ffmpeg-output.c
+          obs-ffmpeg-mpegts.c
+          obs-ffmpeg-mux.c
+          obs-ffmpeg-mux.h
+          obs-ffmpeg-hls-mux.c
+          obs-ffmpeg-source.c
+          obs-ffmpeg-compat.h
+          obs-ffmpeg-formats.h
+          ${CMAKE_BINARY_DIR}/config/obs-ffmpeg-config.h)
 
 set(obs-ffmpeg_HEADERS
 	obs-ffmpeg-compat.h
