@@ -11,10 +11,12 @@ find_package(FFmpeg REQUIRED
 	COMPONENTS avcodec avfilter avdevice avutil swscale avformat swresample)
 include_directories(${FFMPEG_INCLUDE_DIRS})
 
-if(UNIX AND NOT APPLE)
-        find_package(Libpci REQUIRED)
-        include_directories(${LIBPCI_INCLUDE_DIRS})
-endif()
+add_library(obs-ffmpeg MODULE)
+add_library(OBS::ffmpeg ALIAS obs-ffmpeg)
+
+find_package(Librist QUIET)
+find_package(Libsrt QUIET)
+add_subdirectory(ffmpeg-mux)
 
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/obs-ffmpeg-config.h.in"
@@ -36,22 +38,30 @@ target_sources(
           obs-ffmpeg-source.c
           obs-ffmpeg-compat.h
           obs-ffmpeg-formats.h
-          ${CMAKE_BINARY_DIR}/config/obs-ffmpeg-config.h)
+          ${CMAKE_BINARY_DIR}/config/obs-ffmpeg-config.h
+          obs-ffmpeg-srt.h
+          obs-ffmpeg-rist.h
+          obs-ffmpeg-url.h)
 
 set(obs-ffmpeg_HEADERS
 	obs-ffmpeg-compat.h
 	obs-ffmpeg-formats.h
 	obs-ffmpeg-mux.h)
 
-set(obs-ffmpeg_SOURCES
-	obs-ffmpeg.c
-	obs-ffmpeg-audio-encoders.c
-	obs-ffmpeg-nvenc.c
-	obs-ffmpeg-av1.c
-	obs-ffmpeg-output.c
-	obs-ffmpeg-mux.c
-	obs-ffmpeg-hls-mux.c
-	obs-ffmpeg-source.c)
+target_link_libraries(
+  obs-ffmpeg
+  PRIVATE OBS::libobs
+          OBS::media-playback
+          OBS::opts-parser
+          FFmpeg::avcodec
+          FFmpeg::avfilter
+          FFmpeg::avformat
+          FFmpeg::avdevice
+          FFmpeg::avutil
+          FFmpeg::swscale
+          FFmpeg::swresample
+          Librist::Librist
+          Libsrt::Libsrt)
 
 if(UNIX AND NOT APPLE)
 	list(APPEND obs-ffmpeg_SOURCES
@@ -61,10 +71,19 @@ if(UNIX AND NOT APPLE)
 		${LIBPCI_LIBRARIES})
 endif()
 
-if(ENABLE_FFMPEG_LOGGING)
-	list(APPEND obs-ffmpeg_SOURCES
-		obs-ffmpeg-logging.c)
-endif()
+set_target_properties(obs-ffmpeg PROPERTIES FOLDER "plugins/obs-ffmpeg" PREFIX
+                                                                        "")
+target_compile_options(
+  obs-ffmpeg
+  PRIVATE
+    $<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:GNU>>:-Wno-switch>
+)
+
+if(OS_WINDOWS)
+  if(MSVC)
+    target_link_libraries(obs-ffmpeg PRIVATE OBS::w32-pthreads)
+  endif()
+    target_link_libraries(obs-ffmpeg PRIVATE ws2_32.lib)
 
 if(WIN32)
 	set(MODULE_DESCRIPTION "OBS FFmpeg module")
