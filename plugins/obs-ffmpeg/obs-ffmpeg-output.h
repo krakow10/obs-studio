@@ -5,14 +5,14 @@
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
-#include "obs-ffmpeg-srt.h"
-#include "obs-ffmpeg-rist.h"
+#include "obs-ffmpeg-url.h"
 
 struct ffmpeg_cfg {
 	const char *url;
 	const char *format_name;
 	const char *format_mime_type;
 	const char *muxer_settings;
+	const char *protocol_settings; // not used for srt nor rist
 	int gop_size;
 	int video_bitrate;
 	int audio_bitrate;
@@ -98,7 +98,7 @@ struct ffmpeg_output {
 	os_sem_t *write_sem;
 	os_event_t *stop_event;
 
-	DARRAY(AVPacket) packets;
+	DARRAY(AVPacket *) packets;
 	/* used for srt & rist */
 	URLContext *h;
 	AVIOContext *s;
@@ -106,3 +106,9 @@ struct ffmpeg_output {
 };
 bool ffmpeg_data_init(struct ffmpeg_data *data, struct ffmpeg_cfg *config);
 void ffmpeg_data_free(struct ffmpeg_data *data);
+
+#define SRT_PROTO "srt"
+#define UDP_PROTO "udp"
+#define TCP_PROTO "tcp"
+#define HTTP_PROTO "http"
+#define RIST_PROTO "rist"
