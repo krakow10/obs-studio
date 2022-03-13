@@ -9,6 +9,12 @@
 #include <sys/timeb.h>
 #include <time.h>
 
+#define HTTP_PROTO "http"
+#define RIST_PROTO "rist"
+#define SRT_PROTO "srt"
+#define TCP_PROTO "tcp"
+#define UDP_PROTO "udp"
+
 /* lightened version of a struct used by avformat */
 typedef struct URLContext {
 	void *priv_data; /* SRTContext or RISTContext */

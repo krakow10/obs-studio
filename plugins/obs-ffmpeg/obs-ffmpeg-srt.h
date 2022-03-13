@@ -20,9 +20,7 @@
 #include "obs-ffmpeg-url.h"
 #include <srt/srt.h>
 #include <libavformat/avformat.h>
-#ifdef _WIN32
-#pragma comment(lib, "ws2_32.lib")
-#endif
+
 #define POLLING_TIME 100 /// Time in milliseconds between interrupt check
 
 /* This is for MPEG-TS (7 TS packets) */
