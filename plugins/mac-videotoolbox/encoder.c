@@ -909,9 +909,10 @@ static bool rate_control_limit_bitrate_modified(obs_properties_t *ppts,
 	return true;
 }
 
-static obs_properties_t *vt_properties(void *unused)
+static obs_properties_t *vt_properties(void *unused, void *data)
 {
 	UNUSED_PARAMETER(unused);
+	struct vt_encoder_type_data *type_data = data;
 
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
@@ -921,14 +922,18 @@ static obs_properties_t *vt_properties(void *unused)
 				    OBS_COMBO_FORMAT_STRING);
 
 	if (__builtin_available(macOS 13.0, *))
+		if (type_data->hardware_accelerated
 #ifndef __aarch64__
-		if (os_get_emulation_status() == true)
+		    && (os_get_emulation_status() == true)
 #endif
+		)
 			obs_property_list_add_string(p, "CBR", "CBR");
 	obs_property_list_add_string(p, "ABR", "ABR");
+	if (type_data->hardware_accelerated
 #ifndef __aarch64__
-	if (os_get_emulation_status() == true)
+	    && (os_get_emulation_status() == true)
 #endif
+	)
 		obs_property_list_add_string(p, "CRF", "CRF");
 	obs_property_set_modified_callback(p,
 					   rate_control_limit_bitrate_modified);
@@ -966,13 +971,17 @@ static obs_properties_t *vt_properties(void *unused)
 	return props;
 }
 
-static void vt_defaults(obs_data_t *settings)
+static void vt_defaults(obs_data_t *settings, void *data)
 {
+	struct vt_encoder_type_data *type_data = data;
+
 	obs_data_set_default_string(settings, "rate_control", "ABR");
 	if (__builtin_available(macOS 13.0, *))
+		if (type_data->hardware_accelerated
 #ifndef __aarch64__
-		if (os_get_emulation_status() == true)
+		    && (os_get_emulation_status() == true)
 #endif
+		)
 			obs_data_set_default_string(settings, "rate_control",
 						    "CBR");
 	obs_data_set_default_int(settings, "bitrate", 2500);
@@ -1007,8 +1016,8 @@ bool obs_module_load(void)
 		.destroy = vt_destroy,
 		.encode = vt_encode,
 		.update = vt_update,
-		.get_properties = vt_properties,
-		.get_defaults = vt_defaults,
+		.get_properties2 = vt_properties,
+		.get_defaults2 = vt_defaults,
 		.get_video_info = vt_video_info,
 		.get_extra_data = vt_extra_data,
 		.free_type_data = vt_free_type_data,
