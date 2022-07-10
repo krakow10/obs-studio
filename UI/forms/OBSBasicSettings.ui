@@ -2037,7 +2037,7 @@
                                <number>0</number>
                               </property>
                               <item>
-                               <widget class="QRadioButton" name="advOutTrack1">
+                               <widget class="QCheckBox" name="advOutTrack1">
                                 <property name="text">
                                  <string notr="true">1</string>
                                 </property>
@@ -2047,35 +2047,35 @@
                                </widget>
                               </item>
                               <item>
-                               <widget class="QRadioButton" name="advOutTrack2">
+                               <widget class="QCheckBox" name="advOutTrack2">
                                 <property name="text">
                                  <string notr="true">2</string>
                                 </property>
                                </widget>
                               </item>
                               <item>
-                               <widget class="QRadioButton" name="advOutTrack3">
+                               <widget class="QCheckBox" name="advOutTrack3">
                                 <property name="text">
                                  <string notr="true">3</string>
                                 </property>
                                </widget>
                               </item>
                               <item>
-                               <widget class="QRadioButton" name="advOutTrack4">
+                               <widget class="QCheckBox" name="advOutTrack4">
                                 <property name="text">
                                  <string notr="true">4</string>
                                 </property>
                                </widget>
                               </item>
                               <item>
-                               <widget class="QRadioButton" name="advOutTrack5">
+                               <widget class="QCheckBox" name="advOutTrack5">
                                 <property name="text">
                                  <string notr="true">5</string>
                                 </property>
                                </widget>
                               </item>
                               <item>
-                               <widget class="QRadioButton" name="advOutTrack6">
+                               <widget class="QCheckBox" name="advOutTrack6">
                                 <property name="text">
                                  <string notr="true">6</string>
                                 </property>
