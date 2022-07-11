@@ -1866,7 +1866,7 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	bool rescale = config_get_bool(main->Config(), "AdvOut", "Rescale");
 	const char *rescaleRes =
 		config_get_string(main->Config(), "AdvOut", "RescaleRes");
-	int trackIndex = config_get_int(main->Config(), "AdvOut", "TrackIndex");
+	int tracks = config_get_int(main->Config(), "AdvOut", "Tracks");
 
 	ui->advOutUseRescale->setChecked(rescale);
 	ui->advOutRescale->setEnabled(rescale);
@@ -1880,26 +1880,12 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	ui->filenameFormatting->setCompleter(specCompleter);
 	ui->filenameFormatting->setToolTip(QTStr("FilenameFormatting.TT"));
 
-	switch (trackIndex) {
-	case 1:
-		ui->advOutTrack1->setChecked(true);
-		break;
-	case 2:
-		ui->advOutTrack2->setChecked(true);
-		break;
-	case 3:
-		ui->advOutTrack3->setChecked(true);
-		break;
-	case 4:
-		ui->advOutTrack4->setChecked(true);
-		break;
-	case 5:
-		ui->advOutTrack5->setChecked(true);
-		break;
-	case 6:
-		ui->advOutTrack6->setChecked(true);
-		break;
-	}
+	ui->advOutTrack1->setChecked(tracks & (1 << 0));
+	ui->advOutTrack2->setChecked(tracks & (1 << 1));
+	ui->advOutTrack3->setChecked(tracks & (1 << 2));
+	ui->advOutTrack4->setChecked(tracks & (1 << 3));
+	ui->advOutTrack5->setChecked(tracks & (1 << 4));
+	ui->advOutTrack6->setChecked(tracks & (1 << 5));
 }
 
 OBSPropertiesView *
@@ -3566,9 +3552,13 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveComboData(ui->advOutEncoder, "AdvOut", "Encoder");
 	SaveCheckBox(ui->advOutUseRescale, "AdvOut", "Rescale");
 	SaveCombo(ui->advOutRescale, "AdvOut", "RescaleRes");
-	SaveTrackIndex(main->Config(), "AdvOut", "TrackIndex", ui->advOutTrack1,
-		       ui->advOutTrack2, ui->advOutTrack3, ui->advOutTrack4,
-		       ui->advOutTrack5, ui->advOutTrack6);
+	config_set_int(main->Config(), "AdvOut", "Tracks",
+		(ui->advOutTrack1->isChecked() ? (1 << 0) : 0) |
+		(ui->advOutTrack2->isChecked() ? (1 << 1) : 0) |
+		(ui->advOutTrack3->isChecked() ? (1 << 2) : 0) |
+		(ui->advOutTrack4->isChecked() ? (1 << 3) : 0) |
+		(ui->advOutTrack5->isChecked() ? (1 << 4) : 0) |
+		(ui->advOutTrack6->isChecked() ? (1 << 5) : 0));
 
 	config_set_string(main->Config(), "AdvOut", "RecType",
 			  RecTypeFromIdx(ui->advOutRecType->currentIndex()));
@@ -4678,33 +4668,25 @@ void OBSBasicSettings::UpdateAdvOutStreamDelayEstimate()
 		return;
 
 	OBSData settings = streamEncoderProps->GetSettings();
-	int trackIndex = config_get_int(main->Config(), "AdvOut", "TrackIndex");
-	QString aBitrateText;
 
-	switch (trackIndex) {
-	case 1:
-		aBitrateText = ui->advOutTrack1Bitrate->currentText();
-		break;
-	case 2:
-		aBitrateText = ui->advOutTrack2Bitrate->currentText();
-		break;
-	case 3:
-		aBitrateText = ui->advOutTrack3Bitrate->currentText();
-		break;
-	case 4:
-		aBitrateText = ui->advOutTrack4Bitrate->currentText();
-		break;
-	case 5:
-		aBitrateText = ui->advOutTrack5Bitrate->currentText();
-		break;
-	case 6:
-		aBitrateText = ui->advOutTrack6Bitrate->currentText();
-		break;
-	}
+	int tracks = config_get_int(main->Config(), "AdvOut", "Tracks");
+	int aBitrate = 0;
+
+	if (tracks & (1 << 0) != 0)
+		aBitrate += ui->advOutTrack1Bitrate->currentText().toInt();
+	if (tracks & (1 << 1) != 0)
+		aBitrate += ui->advOutTrack2Bitrate->currentText().toInt();
+	if (tracks & (1 << 2) != 0)
+		aBitrate += ui->advOutTrack3Bitrate->currentText().toInt();
+	if (tracks & (1 << 3) != 0)
+		aBitrate += ui->advOutTrack4Bitrate->currentText().toInt();
+	if (tracks & (1 << 4) != 0)
+		aBitrate += ui->advOutTrack5Bitrate->currentText().toInt();
+	if (tracks & (1 << 5) != 0)
+		aBitrate += ui->advOutTrack6Bitrate->currentText().toInt();
 
 	int seconds = ui->streamDelaySec->value();
 	int vBitrate = (int)obs_data_get_int(settings, "bitrate");
-	int aBitrate = aBitrateText.toInt();
 
 	QString msg = MakeMemorySizeString(vBitrate + aBitrate, seconds);
 
