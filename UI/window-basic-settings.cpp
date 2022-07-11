@@ -445,12 +445,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutEncoder,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutUseRescale,     CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRescale,        CBEDIT_CHANGED, OUTPUTS_CHANGED);
-	HookWidget(ui->advOutTrack1,         CHECK_CHANGED,  OUTPUTS_CHANGED);
-	HookWidget(ui->advOutTrack2,         CHECK_CHANGED,  OUTPUTS_CHANGED);
-	HookWidget(ui->advOutTrack3,         CHECK_CHANGED,  OUTPUTS_CHANGED);
-	HookWidget(ui->advOutTrack4,         CHECK_CHANGED,  OUTPUTS_CHANGED);
-	HookWidget(ui->advOutTrack5,         CHECK_CHANGED,  OUTPUTS_CHANGED);
-	HookWidget(ui->advOutTrack6,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecType,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecPath,        EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutNoSpace,        CHECK_CHANGED,  OUTPUTS_CHANGED);
@@ -842,19 +836,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	InitStreamPage();
 	LoadSettings(false);
-
-	ui->advOutTrack1->setAccessibleName(
-		QTStr("Basic.Settings.Output.Adv.Audio.Track1"));
-	ui->advOutTrack2->setAccessibleName(
-		QTStr("Basic.Settings.Output.Adv.Audio.Track2"));
-	ui->advOutTrack3->setAccessibleName(
-		QTStr("Basic.Settings.Output.Adv.Audio.Track3"));
-	ui->advOutTrack4->setAccessibleName(
-		QTStr("Basic.Settings.Output.Adv.Audio.Track4"));
-	ui->advOutTrack5->setAccessibleName(
-		QTStr("Basic.Settings.Output.Adv.Audio.Track5"));
-	ui->advOutTrack6->setAccessibleName(
-		QTStr("Basic.Settings.Output.Adv.Audio.Track6"));
 
 	ui->advOutRecTrack1->setAccessibleName(
 		QTStr("Basic.Settings.Output.Adv.Audio.Track1"));
@@ -1866,7 +1847,6 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	bool rescale = config_get_bool(main->Config(), "AdvOut", "Rescale");
 	const char *rescaleRes =
 		config_get_string(main->Config(), "AdvOut", "RescaleRes");
-	int tracks = config_get_int(main->Config(), "AdvOut", "Tracks");
 
 	ui->advOutUseRescale->setChecked(rescale);
 	ui->advOutRescale->setEnabled(rescale);
@@ -1880,12 +1860,14 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	ui->filenameFormatting->setCompleter(specCompleter);
 	ui->filenameFormatting->setToolTip(QTStr("FilenameFormatting.TT"));
 
-	ui->advOutTrack1->setChecked(tracks & (1 << 0));
-	ui->advOutTrack2->setChecked(tracks & (1 << 1));
-	ui->advOutTrack3->setChecked(tracks & (1 << 2));
-	ui->advOutTrack4->setChecked(tracks & (1 << 3));
-	ui->advOutTrack5->setChecked(tracks & (1 << 4));
-	ui->advOutTrack6->setChecked(tracks & (1 << 5));
+	if (config_get_bool(main->Config(), "AdvOut", "UseMultipleAudio")){
+		int tracks = config_get_int(main->Config(), "AdvOut", "Tracks");
+		for (int i = 0; i < MAX_AUDIO_MIXES; i++)
+			audioTrackCheckBox[i]->setChecked(tracks & (1 << i));
+	} else {
+		int trackIndex = config_get_int(main->Config(), "AdvOut", "TrackIndex");
+		audioTrackRadioButton[trackIndex - 1]->setChecked(true);
+	}
 }
 
 OBSPropertiesView *
@@ -3552,14 +3534,25 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveComboData(ui->advOutEncoder, "AdvOut", "Encoder");
 	SaveCheckBox(ui->advOutUseRescale, "AdvOut", "Rescale");
 	SaveCombo(ui->advOutRescale, "AdvOut", "RescaleRes");
-	config_set_int(main->Config(), "AdvOut", "Tracks",
-		(ui->advOutTrack1->isChecked() ? (1 << 0) : 0) |
-		(ui->advOutTrack2->isChecked() ? (1 << 1) : 0) |
-		(ui->advOutTrack3->isChecked() ? (1 << 2) : 0) |
-		(ui->advOutTrack4->isChecked() ? (1 << 3) : 0) |
-		(ui->advOutTrack5->isChecked() ? (1 << 4) : 0) |
-		(ui->advOutTrack6->isChecked() ? (1 << 5) : 0));
 
+	config_set_int(main->Config(), "AdvOut", "UseMultipleAudio", useMultipleAudio);
+	if (useMultipleAudio) {
+		int tracks = 0;
+		for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+			if (audioTrackCheckBox[i]->isChecked())
+				tracks += 1 << i;
+		}
+		config_set_int(main->Config(), "AdvOut", "Tracks", tracks);
+	} else {
+		int trackIndex = 1;
+		for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+			if (audioTrackRadioButton[i]->isChecked()){
+				trackIndex = i + 1;
+				break;
+			}
+		}
+		config_set_int(main->Config(), "AdvOut", "TrackIndex", trackIndex);
+	}
 	config_set_string(main->Config(), "AdvOut", "RecType",
 			  RecTypeFromIdx(ui->advOutRecType->currentIndex()));
 

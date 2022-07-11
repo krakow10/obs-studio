@@ -1446,7 +1446,12 @@ inline void AdvancedOutput::SetupStreaming()
 		}
 	}
 
-	int tracks = config_get_int(main->Config(), "AdvOut", "Tracks");
+	int tracks = 0;
+	if (config_get_bool(main->Config(), "AdvOut", "UseMultipleAudio"))
+		tracks = config_get_int(main->Config(), "AdvOut", "Tracks");
+	else
+		tracks = 1 << (config_get_int(main->Config(), "AdvOut", "TrackIndex") - 1);
+
 	int idx = 0;
 	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
 		if ((tracks & (1 << i)) != 0) {
@@ -1493,8 +1498,12 @@ inline void AdvancedOutput::SetupRecording()
 	unsigned int cy = 0;
 	int idx = 0;
 
-	if (tracks == 0)
-		tracks = config_get_int(main->Config(), "AdvOut", "Tracks");
+	if (tracks == 0){
+		if (config_get_bool(main->Config(), "AdvOut", "UseMultipleAudio"))
+			tracks = config_get_int(main->Config(), "AdvOut", "Tracks");
+		else
+			tracks = 1 << (config_get_int(main->Config(), "AdvOut", "TrackIndex") - 1);
+	}
 
 	if (useStreamEncoder) {
 		obs_output_set_video_encoder(fileOutput, videoStreaming);
@@ -1624,8 +1633,13 @@ inline void AdvancedOutput::UpdateAudioSettings()
 						    "ApplyServiceSettings");
 	bool enforceBitrate = !config_get_bool(main->Config(), "Stream1",
 					       "IgnoreRecommended");
-	int streamTracks =
-		config_get_int(main->Config(), "AdvOut", "Tracks");
+
+	int streamTracks = 0;
+	if (config_get_bool(main->Config(), "AdvOut", "UseMultipleAudio"))
+		streamTracks = config_get_int(main->Config(), "AdvOut", "Tracks");
+	else
+		streamTracks = 1 << (config_get_int(main->Config(), "AdvOut", "TrackIndex") - 1);
+
 	int vodTrackIndex =
 		config_get_int(main->Config(), "AdvOut", "VodTrackIndex");
 	OBSDataAutoRelease settings[MAX_AUDIO_MIXES];
@@ -1700,8 +1714,12 @@ int AdvancedOutput::GetAudioBitrate(size_t i) const
 
 inline void AdvancedOutput::SetupVodTrack(obs_service_t *service)
 {
-	int streamTracks =
-		config_get_int(main->Config(), "AdvOut", "Tracks");
+	int streamTracks = 0;
+	if (config_get_bool(main->Config(), "AdvOut", "UseMultipleAudio"))
+		streamTracks = config_get_int(main->Config(), "AdvOut", "Tracks");
+	else
+		streamTracks = 1 << (config_get_int(main->Config(), "AdvOut", "TrackIndex") - 1);
+
 	bool vodTrackEnabled =
 		config_get_bool(main->Config(), "AdvOut", "VodTrackEnabled");
 	int vodTrackIndex =
@@ -1728,8 +1746,11 @@ inline void AdvancedOutput::SetupVodTrack(obs_service_t *service)
 
 bool AdvancedOutput::SetupStreaming(obs_service_t *service)
 {
-	int streamTracks =
-		config_get_int(main->Config(), "AdvOut", "Tracks");
+	int streamTracks = 0;
+	if (config_get_bool(main->Config(), "AdvOut", "UseMultipleAudio"))
+		streamTracks = config_get_int(main->Config(), "AdvOut", "Tracks");
+	else
+		streamTracks = 1 << (config_get_int(main->Config(), "AdvOut", "TrackIndex") - 1);
 
 	if (!useStreamEncoder ||
 	    (!ffmpegOutput && !obs_output_active(fileOutput))) {

@@ -79,6 +79,8 @@ void OBSBasicSettings::InitStreamPage()
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), &streamUi,
 		SLOT(UpdateKeyLink()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(UpdateAdvOutTrackSetting()));
+	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateVodTrackSetting()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateServiceRecommendations()));
@@ -162,6 +164,7 @@ void OBSBasicSettings::LoadStream1Settings()
 
 	streamUi.UpdateKeyLink();
 	streamUi.UpdateMoreInfoLink();
+	UpdateAdvOutTrackSetting();
 	UpdateVodTrackSetting();
 	UpdateServiceRecommendations();
 
@@ -629,6 +632,81 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 		config_get_int(main->Config(), "AdvOut", "VodTrackIndex");
 	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
 		vodTrack[i]->setChecked((i + 1) == trackIndex);
+	}
+}
+
+void OBSBasicSettings::UpdateAdvOutTrackSetting()
+{
+	bool enableMultiTrack = false;
+
+	if (streamUi.IsCustomService())
+		enableMultiTrack = true;
+
+	//Add services which support streaming multiple audio tracks here
+
+	useMultipleAudio = enableMultiTrack;
+
+	//Always replace the whole gui on update.
+	delete audioTrackLabel;
+	delete audioTrackContainer;
+
+	audioTrackLabel = new QLabel(this);
+	audioTrackLabel->setText(
+		QTStr("Basic.Settings.Output.Adv.AudioTrack"));
+	audioTrackLabel->setLayoutDirection(Qt::RightToLeft);
+
+	audioTrackContainer = new QWidget(this);
+	QHBoxLayout *audioTrackLayout = new QHBoxLayout();
+
+	if (enableMultiTrack) {
+		//advanced output mode audio track checkbox widgets
+		for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+			audioTrackCheckBox[i] = new QCheckBox(QString::number(i + 1));
+			audioTrackLayout->addWidget(audioTrackCheckBox[i]);
+			
+			/* this was moved from somewhere else but I doubt this is going to work
+			audioTrackCheckBox[i]->setAccessibleName(
+				QTStr("Basic.Settings.Output.Adv.Audio.Track%1")
+				.arg(QString::number(i + 1)));
+			*/
+
+			HookWidget(audioTrackCheckBox[i], SIGNAL(clicked(bool)),
+				   SLOT(OutputsChanged()));
+		}
+	} else {
+		//advanced output mode audio track radiobutton widgets
+		for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+			audioTrackRadioButton[i] = new QRadioButton(QString::number(i + 1));
+			audioTrackLayout->addWidget(audioTrackRadioButton[i]);
+
+			/* this was moved from somewhere else but I doubt this is going to work
+			audioTrackRadioButton[i]->setAccessibleName(
+				QTStr("Basic.Settings.Output.Adv.Audio.Track%1")
+				.arg(QString::number(i + 1)));
+			*/
+
+			HookWidget(audioTrackRadioButton[i], SIGNAL(clicked(bool)),
+				   SLOT(OutputsChanged()));
+		}
+
+	}
+
+	audioTrackLayout->addStretch();
+	audioTrackLayout->setContentsMargins(0, 0, 0, 0);
+
+	audioTrackContainer->setLayout(audioTrackLayout);
+
+	ui->advOutTopLayout->insertRow(1, audioTrackLabel, audioTrackContainer);
+
+	if (enableMultiTrack) {
+		int tracks =
+			config_get_int(main->Config(), "AdvOut", "Tracks");
+		for (int i = 0; i < MAX_AUDIO_MIXES; i++)
+			audioTrackCheckBox[i]->setChecked((tracks & (1 << i)) != 0);
+	} else {
+		int trackIndex =
+			config_get_int(main->Config(), "AdvOut", "TrackIndex");
+		audioTrackRadioButton[trackIndex - 1]->setChecked(true);
 	}
 }
 

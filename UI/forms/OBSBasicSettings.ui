@@ -2015,75 +2015,6 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="1" column="1">
-                            <widget class="QFrame" name="widget_8">
-                             <property name="sizePolicy">
-                              <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                               <horstretch>0</horstretch>
-                               <verstretch>0</verstretch>
-                              </sizepolicy>
-                             </property>
-                             <layout class="QHBoxLayout" name="horizontalLayout_7">
-                              <property name="leftMargin">
-                               <number>0</number>
-                              </property>
-                              <property name="topMargin">
-                               <number>0</number>
-                              </property>
-                              <property name="rightMargin">
-                               <number>0</number>
-                              </property>
-                              <property name="bottomMargin">
-                               <number>0</number>
-                              </property>
-                              <item>
-                               <widget class="QCheckBox" name="advOutTrack1">
-                                <property name="text">
-                                 <string notr="true">1</string>
-                                </property>
-                                <property name="checked">
-                                 <bool>true</bool>
-                                </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QCheckBox" name="advOutTrack2">
-                                <property name="text">
-                                 <string notr="true">2</string>
-                                </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QCheckBox" name="advOutTrack3">
-                                <property name="text">
-                                 <string notr="true">3</string>
-                                </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QCheckBox" name="advOutTrack4">
-                                <property name="text">
-                                 <string notr="true">4</string>
-                                </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QCheckBox" name="advOutTrack5">
-                                <property name="text">
-                                 <string notr="true">5</string>
-                                </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QCheckBox" name="advOutTrack6">
-                                <property name="text">
-                                 <string notr="true">6</string>
-                                </property>
-                               </widget>
-                              </item>
-                             </layout>
-                            </widget>
-                           </item>
                            <item row="2" column="0">
                             <widget class="QLabel" name="advOutEncLabel">
                              <property name="text">
@@ -5877,12 +5808,6 @@
   <tabstop>simpleRBSecMax</tabstop>
   <tabstop>simpleRBMegsMax</tabstop>
   <tabstop>advOutTabs</tabstop>
-  <tabstop>advOutTrack1</tabstop>
-  <tabstop>advOutTrack2</tabstop>
-  <tabstop>advOutTrack3</tabstop>
-  <tabstop>advOutTrack4</tabstop>
-  <tabstop>advOutTrack5</tabstop>
-  <tabstop>advOutTrack6</tabstop>
   <tabstop>advOutEncoder</tabstop>
   <tabstop>advOutUseRescale</tabstop>
   <tabstop>advOutRescale</tabstop>

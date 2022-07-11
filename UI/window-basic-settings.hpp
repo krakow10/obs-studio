@@ -170,6 +170,12 @@ private:
 	QPointer<QWidget> vodTrackContainer;
 	QPointer<QRadioButton> vodTrack[MAX_AUDIO_MIXES];
 
+	bool useMultipleAudio = false;
+	QPointer<QLabel> audioTrackLabel;
+	QPointer<QWidget> audioTrackContainer;
+	QPointer<QCheckBox> audioTrackCheckBox[MAX_AUDIO_MIXES];
+	QPointer<QRadioButton> audioTrackRadioButton[MAX_AUDIO_MIXES];
+
 	QIcon hotkeyConflictIcon;
 
 	void SaveCombo(QComboBox *widget, const char *section,
@@ -258,6 +264,7 @@ private:
 	int prevLangIndex;
 	bool prevBrowserAccel;
 private slots:
+	void UpdateAdvOutTrackSetting();
 	void UpdateVodTrackSetting();
 	void UpdateServiceRecommendations();
 	void RecreateOutputResolutionWidget();
