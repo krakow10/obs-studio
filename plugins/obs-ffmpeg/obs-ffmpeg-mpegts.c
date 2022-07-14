@@ -801,6 +801,17 @@ static bool get_extradata(struct ffmpeg_output *stream)
 	return true;
 }
 
+static int get_audio_mix_count(int audio_mix_mask)
+{
+	int mix_count = 0;
+	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+		if ((audio_mix_mask & (1 << i)) != 0) {
+			mix_count++;
+		}
+	}
+	return mix_count;
+}
+
 /* set ffmpeg_config & init write_thread & capture */
 static bool set_config(struct ffmpeg_output *stream)
 {
@@ -901,13 +912,12 @@ static bool set_config(struct ffmpeg_output *stream)
 	// 3.c set audio frame size
 	config.frame_size = (int)obs_encoder_get_frame_size(aencoder);
 
-	// 3.d) set the number of tracks
-	// The UI for multiple tracks is not written for streaming outputs.
-	// When it is, modify write_packet & uncomment :
-	// config.audio_tracks = (int)obs_output_get_mixers(stream->output);
-	// config.audio_mix_count = get_audio_mix_count(config.audio_tracks);
-	config.audio_tracks = 1;
-	config.audio_mix_count = 1;
+	// 3.d) set the number of tracks ; if there's no mix_mask, one is in
+	// simple output mode where there's a single track (track 1).
+	int mix_mask = (int)obs_output_get_mixers(stream->output);
+	config.audio_tracks = mix_mask ? mix_mask : 1;
+	config.audio_mix_count =
+		mix_mask ? get_audio_mix_count(config.audio_tracks) : 1;
 
 	/* 4. Muxer & protocol settings */
 	// This requires some UI to be written for the output.
@@ -950,7 +960,7 @@ static bool set_config(struct ffmpeg_output *stream)
 		return false;
 	if (!obs_output_initialize_encoders(stream->output, 0))
 		return false;
-
+	config.frame_size = (int)obs_encoder_get_frame_size(aencoder);
 	ret = pthread_create(&stream->write_thread, NULL, write_thread, stream);
 	if (ret != 0) {
 		ffmpeg_mpegts_log_error(
@@ -1058,27 +1068,45 @@ static inline int64_t rescale_ts2(AVStream *stream, AVRational codec_time_base,
 				AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
 }
 
+/* Given a bitmask for the selected tracks and the mix index,
+ * this returns the stream index which will be passed to the muxer. */
+static int get_track_order(int track_config, size_t mix_index)
+{
+	int position = 0;
+	for (size_t i = 0; i < mix_index; i++) {
+		if (track_config & 1 << i)
+			position++;
+	}
+	return position;
+}
+
 /* Convert obs encoder_packet to FFmpeg AVPacket and write to circular buffer
  * where it will be processed in the write_thread by process_packet.
  */
 void mpegts_write_packet(struct ffmpeg_output *stream,
 			 struct encoder_packet *encpacket)
 {
+	int track_order;
+
 	if (stopping(stream) || !stream->ff_data.video ||
 	    !stream->ff_data.video_ctx || !stream->ff_data.audio_infos)
 		return;
-	if (!stream->ff_data.audio_infos[encpacket->track_idx].stream)
-		return;
 	bool is_video = encpacket->type == OBS_ENCODER_VIDEO;
+	if (!is_video) {
+		track_order = get_track_order(stream->ff_data.audio_tracks,
+					      encpacket->track_idx);
+		if (!stream->ff_data.audio_infos[track_order].stream)
+			return;
+	}
+
 	AVStream *avstream =
 		is_video ? stream->ff_data.video
-			 : stream->ff_data.audio_infos[encpacket->track_idx]
-				   .stream;
+			 : stream->ff_data.audio_infos[track_order].stream;
 	AVPacket *packet = NULL;
 
 	const AVRational codec_time_base =
 		is_video ? stream->ff_data.video_ctx->time_base
-			 : stream->ff_data.audio_infos[encpacket->track_idx]
+			 : stream->ff_data.audio_infos[track_order]
 				   .ctx->time_base;
 
 	packet = av_packet_alloc();
@@ -1104,6 +1132,7 @@ void mpegts_write_packet(struct ffmpeg_output *stream,
 fail:
 	av_packet_free(&packet);
 }
+
 static bool write_header(struct ffmpeg_output *stream, struct ffmpeg_data *data)
 {
 	AVDictionary *dict = NULL;
