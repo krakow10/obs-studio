@@ -19,6 +19,8 @@ volatile bool virtualcam_active = false;
 
 #define FTL_PROTOCOL "ftl"
 #define RTMP_PROTOCOL "rtmp"
+#define SRT_PROTOCOL "srt"
+#define RIST_PROTOCOL "rist"
 
 static void OBSStreamStarting(void *data, calldata_t *params)
 {
@@ -1759,13 +1761,28 @@ static inline bool ServiceSupportsVodTrack(const char *service)
 	return false;
 }
 
+inline bool isMpegts(const char *url)
+{
+	return strncmp(url, SRT_PROTOCOL, strlen(SRT_PROTOCOL)) == 0 ||
+	       strncmp(url, RIST_PROTOCOL, strlen(RIST_PROTOCOL)) == 0;
+}
+
 inline void AdvancedOutput::SetupStreaming()
 {
 	bool rescale = config_get_bool(main->Config(), "AdvOut", "Rescale");
 	const char *rescaleRes =
 		config_get_string(main->Config(), "AdvOut", "RescaleRes");
+	int mpegtsAudioMixes =
+		config_get_int(main->Config(), "AdvOut", "MpegtsAudioMixes");
 	unsigned int cx = 0;
 	unsigned int cy = 0;
+	int idx = 0;
+	bool is_mpegts = false;
+	obs_service_t *service_obj = main->GetService();
+	const char *url = obs_service_get_connect_info(
+		service_obj, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
+	if (url != NULL)
+		is_mpegts = isMpegts(url);
 
 	if (rescale && rescaleRes && *rescaleRes) {
 		if (sscanf(rescaleRes, "%ux%u", &cx, &cy) != 2) {
@@ -1774,7 +1791,19 @@ inline void AdvancedOutput::SetupStreaming()
 		}
 	}
 
-	obs_output_set_audio_encoder(streamOutput, streamAudioEnc, 0);
+	if (!is_mpegts) {
+		obs_output_set_audio_encoder(streamOutput, streamAudioEnc, 0);
+	} else {
+		for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+			if ((mpegtsAudioMixes & (1 << i)) != 0) {
+				obs_output_set_audio_encoder(
+					streamOutput, recordTrack[i], idx);
+				idx++;
+			}
+		}
+	}
+	obs_output_set_mixers(streamOutput, mpegtsAudioMixes);
+	obs_output_set_media(streamOutput, obs_get_video(), obs_get_audio());
 	obs_encoder_set_scaled_size(videoStreaming, cx, cy);
 
 	const char *id = obs_service_get_id(main->GetService());
@@ -1965,6 +1994,13 @@ inline void AdvancedOutput::UpdateAudioSettings()
 		config_get_string(main->Config(), "AdvOut", "AudioEncoder");
 	const char *recAudioEncoder =
 		config_get_string(main->Config(), "AdvOut", "RecAudioEncoder");
+	bool is_mpegts = false;
+	obs_service_t *service_obj = main->GetService();
+	const char *url = obs_service_get_connect_info(
+		service_obj, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
+	if (url != NULL)
+		is_mpegts = isMpegts(url);
+
 	OBSDataAutoRelease settings[MAX_AUDIO_MIXES];
 
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
@@ -1990,24 +2026,29 @@ inline void AdvancedOutput::UpdateAudioSettings()
 		obs_data_set_int(settings[i], "bitrate",
 				 GetAudioBitrate(i, audioEncoder));
 
-		if (track == streamTrackIndex || track == vodTrackIndex) {
-			if (applyServiceSettings) {
-				int bitrate = (int)obs_data_get_int(settings[i],
-								    "bitrate");
-				obs_service_apply_encoder_settings(
-					main->GetService(), nullptr,
-					settings[i]);
+		if (!is_mpegts) {
+			if (track == streamTrackIndex ||
+			    track == vodTrackIndex) {
+				if (applyServiceSettings) {
+					int bitrate = (int)obs_data_get_int(
+						settings[i], "bitrate");
+					obs_service_apply_encoder_settings(
+						main->GetService(), nullptr,
+						settings[i]);
 
-				if (!enforceBitrate)
-					obs_data_set_int(settings[i], "bitrate",
-							 bitrate);
+					if (!enforceBitrate)
+						obs_data_set_int(settings[i],
+								 "bitrate",
+								 bitrate);
+				}
 			}
-		}
 
-		if (track == streamTrackIndex)
-			obs_encoder_update(streamAudioEnc, settings[i]);
-		if (track == vodTrackIndex)
-			obs_encoder_update(streamArchiveEnc, settings[i]);
+			if (track == streamTrackIndex)
+				obs_encoder_update(streamAudioEnc, settings[i]);
+			if (track == vodTrackIndex)
+				obs_encoder_update(streamArchiveEnc,
+						   settings[i]);
+		}
 	}
 }
 
@@ -2060,7 +2101,6 @@ inline void AdvancedOutput::SetupVodTrack(obs_service_t *service)
 		if (!ServiceSupportsVodTrack(service))
 			vodTrackEnabled = false;
 	}
-
 	if (vodTrackEnabled && streamTrack != vodTrackIndex)
 		obs_output_set_audio_encoder(streamOutput, streamArchiveEnc, 1);
 	else
@@ -2069,6 +2109,16 @@ inline void AdvancedOutput::SetupVodTrack(obs_service_t *service)
 
 bool AdvancedOutput::SetupStreaming(obs_service_t *service)
 {
+	int mpegtsAudioMixes =
+		config_get_int(main->Config(), "AdvOut", "MpegtsAudioMixes");
+	int idx = 0;
+	bool is_mpegts = false;
+	obs_service_t *service_obj = main->GetService();
+	const char *url = obs_service_get_connect_info(
+		service_obj, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
+	if (url != NULL)
+		is_mpegts = isMpegts(url);
+
 	if (!useStreamEncoder ||
 	    (!ffmpegOutput && !obs_output_active(fileOutput))) {
 		UpdateStreamSettings();
@@ -2124,8 +2174,19 @@ bool AdvancedOutput::SetupStreaming(obs_service_t *service)
 	}
 
 	obs_output_set_video_encoder(streamOutput, videoStreaming);
-	obs_output_set_audio_encoder(streamOutput, streamAudioEnc, 0);
-
+	if (!is_mpegts) {
+		obs_output_set_audio_encoder(streamOutput, streamAudioEnc, 0);
+	} else {
+		for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+			if ((mpegtsAudioMixes & (1 << i)) != 0) {
+				obs_output_set_audio_encoder(
+					streamOutput, recordTrack[i], idx);
+				idx++;
+			}
+		}
+	}
+	obs_output_set_mixers(streamOutput, mpegtsAudioMixes);
+	obs_output_set_media(streamOutput, obs_get_video(), obs_get_audio());
 	return true;
 }
 
@@ -2151,7 +2212,12 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 #endif
 	bool enableDynBitrate =
 		config_get_bool(main->Config(), "Output", "DynamicBitrate");
-
+	bool is_mpegts = false;
+	obs_service_t *service_obj = main->GetService();
+	const char *url = obs_service_get_connect_info(
+		service_obj, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
+	if (url != NULL)
+		is_mpegts = isMpegts(url);
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_string(settings, "bind_ip", bindIP);
 #ifdef _WIN32
@@ -2170,9 +2236,9 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 			     preserveDelay ? OBS_OUTPUT_DELAY_PRESERVE : 0);
 
 	obs_output_set_reconnect_settings(streamOutput, maxRetries, retryDelay);
-
-	SetupVodTrack(service);
-
+	if (strncmp(url, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) == 0) {
+		SetupVodTrack(service);
+	}
 	if (obs_output_start(streamOutput)) {
 		return true;
 	}

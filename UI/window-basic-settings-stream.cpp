@@ -249,6 +249,7 @@ void OBSBasicSettings::SaveStream1Settings()
 
 	main->SetService(newService);
 	main->SaveService();
+	LoadOutputSettings();
 	main->auth = auth;
 	if (!!main->auth) {
 		main->auth->LoadUI();
