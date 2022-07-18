@@ -1406,8 +1406,8 @@ inline void AdvancedOutput::SetupStreaming()
 	}
 	obs_output_set_mixers(streamOutput, mpegtsAudioMixes);
 	obs_output_set_media(streamOutput, obs_get_video(), obs_get_audio());
-	obs_encoder_set_scaled_size(videoStreaming, cx, cy);
-	obs_encoder_set_video(videoStreaming, obs_get_video());
+	obs_encoder_set_scaled_size(h264Streaming, cx, cy);
+	obs_encoder_set_video(h264Streaming, obs_get_video());
 
 	const char *id = obs_service_get_id(main->GetService());
 	if (strcmp(id, "rtmp_custom") == 0) {
@@ -1795,7 +1795,7 @@ bool AdvancedOutput::SetupStreaming(obs_service_t *service)
 		outputType = type;
 	}
 
-	obs_output_set_video_encoder(streamOutput, videoStreaming);
+	obs_output_set_video_encoder(streamOutput, h264Streaming);
 	if (!is_mpegts) {
 		obs_output_set_audio_encoder(streamOutput, streamAudioEnc, 0);
 	} else {
