@@ -104,18 +104,6 @@ if(WIN32)
 		jim-nvenc.h)
 endif()
 
-add_library(obs-ffmpeg MODULE
-	${obs-ffmpeg_config_HEADERS}
-	${obs-ffmpeg_HEADERS}
-	${obs-ffmpeg_SOURCES})
-target_link_libraries(obs-ffmpeg
-	libobs
-	opts-parser
-	media-playback
-	${obs-ffmpeg_PLATFORM_DEPS}
-	${FFMPEG_LIBRARIES})
-set_target_properties(obs-ffmpeg PROPERTIES FOLDER "plugins/obs-ffmpeg")
-
 install_obs_plugin_with_data(obs-ffmpeg data)
 
 add_subdirectory(ffmpeg-mux)
