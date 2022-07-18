@@ -29,7 +29,6 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 target_sources(
   obs-ffmpeg
   PRIVATE obs-ffmpeg.c
-          obs-ffmpeg-video-encoders.c
           obs-ffmpeg-audio-encoders.c
           obs-ffmpeg-av1.c
           obs-ffmpeg-nvenc.c
