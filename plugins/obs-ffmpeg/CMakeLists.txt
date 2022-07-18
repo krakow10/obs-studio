@@ -105,5 +105,3 @@ if(WIN32)
 endif()
 
 install_obs_plugin_with_data(obs-ffmpeg data)
-
-add_subdirectory(ffmpeg-mux)
