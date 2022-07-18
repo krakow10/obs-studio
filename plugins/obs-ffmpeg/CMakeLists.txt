@@ -91,6 +91,7 @@ if(OS_WINDOWS)
   if(MSVC)
     target_link_libraries(obs-ffmpeg PRIVATE OBS::w32-pthreads)
   endif()
+endif()
 
 if(WIN32)
 	set(MODULE_DESCRIPTION "OBS FFmpeg module")
