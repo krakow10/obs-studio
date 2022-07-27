@@ -1423,7 +1423,8 @@ bool OBSApp::OBSInit()
 	qRegisterMetaType<VoidFunc>();
 
 #if !defined(_WIN32) && !defined(__APPLE__)
-	if (QApplication::platformName() == "xcb") {
+	obs_set_nix_platform(OBS_NIX_PLATFORM_X11_GLX);
+	if (QApplication::platformName() == "xcb" && getenv("OBS_USE_EGL")) {
 		obs_set_nix_platform(OBS_NIX_PLATFORM_X11_EGL);
 		blog(LOG_INFO, "Using EGL/X11");
 	}
