@@ -40,6 +40,11 @@ bool obs_module_load(void)
 	case OBS_NIX_PLATFORM_X11_EGL:
 		obs_register_source(&xshm_input);
 		xcomposite_load();
+		break;
+
+	case OBS_NIX_PLATFORM_X11_EGL:
+		obs_register_source(&xshm_input);
+		xcomposite_load();
 	}
 
 	return true;
