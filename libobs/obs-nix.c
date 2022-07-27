@@ -326,13 +326,16 @@ void log_system_info(void)
 	log_distribution_info();
 	log_desktop_session_info();
 #endif
-	if (obs_get_nix_platform() == OBS_NIX_PLATFORM_X11_EGL)
+	switch (obs_get_nix_platform()) {
+	case OBS_NIX_PLATFORM_X11_GLX:
+	case OBS_NIX_PLATFORM_X11_EGL:
 		obs_nix_x11_log_info();
 }
 
 bool obs_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys)
 {
 	switch (obs_get_nix_platform()) {
+	case OBS_NIX_PLATFORM_X11_GLX:
 	case OBS_NIX_PLATFORM_X11_EGL:
 		hotkeys_vtable = obs_nix_x11_get_hotkeys_vtable();
 		break;
