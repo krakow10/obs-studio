@@ -2127,7 +2127,8 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	ui->advOutMpegtsTrack5->setChecked(audioMixes & (1 << 4));
 	ui->advOutMpegtsTrack6->setChecked(audioMixes & (1 << 5));
 	obs_service_t *service_obj = main->GetService();
-	const char *url = obs_service_get_url(service_obj);
+	const char *url = obs_service_get_connect_info(
+		service_obj, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
 	if (url != NULL &&
 	    strncmp(url, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) != 0) {
 		ui->advStreamTrackWidget->setCurrentWidget(ui->mpegtsTracks);

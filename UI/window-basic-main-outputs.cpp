@@ -1744,7 +1744,8 @@ inline void AdvancedOutput::SetupStreaming()
 	int idx = 0;
 	bool is_mpegts = false;
 	obs_service_t *service_obj = main->GetService();
-	const char *url = obs_service_get_url(service_obj);
+	const char *url = obs_service_get_connect_info(
+		service_obj, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
 	if (url != NULL &&
 	    strncmp(url, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) != 0) {
 		is_mpegts = true;
@@ -1959,7 +1960,8 @@ inline void AdvancedOutput::UpdateAudioSettings()
 		config_get_string(main->Config(), "AdvOut", "RecAudioEncoder");
 	bool is_mpegts = false;
 	obs_service_t *service_obj = main->GetService();
-	const char *url = obs_service_get_url(service_obj);
+	const char *url = obs_service_get_connect_info(
+		service_obj, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
 	if (url != NULL &&
 	    strncmp(url, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) != 0) {
 		is_mpegts = true;
@@ -2074,7 +2076,8 @@ bool AdvancedOutput::SetupStreaming(obs_service_t *service)
 	int idx = 0;
 	bool is_mpegts = false;
 	obs_service_t *service_obj = main->GetService();
-	const char *url = obs_service_get_url(service_obj);
+	const char *url = obs_service_get_connect_info(
+		service_obj, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
 	if (url != NULL &&
 	    strncmp(url, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) != 0) {
 		is_mpegts = true;
@@ -2177,7 +2180,8 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 		config_get_bool(main->Config(), "Output", "DynamicBitrate");
 	bool is_mpegts = false;
 	obs_service_t *service_obj = main->GetService();
-	const char *url = obs_service_get_url(service_obj);
+	const char *url = obs_service_get_connect_info(
+		service_obj, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
 	if (url != NULL &&
 	    strncmp(url, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) != 0) {
 		is_mpegts = true;
